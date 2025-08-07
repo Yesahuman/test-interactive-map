@@ -1,7 +1,69 @@
 <!DOCTYPE html>
 <html>
-  <head><title>My Page</title></head>
-  <body>
-    <h1>Hello, GitHub Pages!</h1>
-  </body>
+<head>
+  <meta charset="utf-8" />
+  <title>Postal Code Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 500px; width: 100%; margin-top: 20px; }
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input { padding: 5px; font-size: 16px; }
+    button { padding: 5px 10px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h2>Interactive Postal Code Map</h2>
+  <input id="search" placeholder="Enter Postal Code (e.g. 569933)" />
+  <button onclick="searchLocation()">Search</button>
+  <div id="addressOutput" style="margin-top: 10px;"></div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([1.3521, 103.8198], 12); // Singapore center
+    let marker;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    function searchLocation() {
+      const searchVal = document.getElementById("search").value.trim();
+      const token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo4MTAxLCJmb3JldmVyIjpmYWxzZSwiaXNzIjoiT25lTWFwIiwiaWF0IjoxNzU0NTc2MTA1LCJuYmYiOjE3NTQ1NzYxMDUsImV4cCI6MTc1NDgzNTMwNSwianRpIjoiOGI1MTE3ODUtNTQyNy00MTAyLWE0NDUtZjE5ZjEzZjBiMDE0In0.npWcZpKMbpuW539fNbSVU_r9dAK9sPmBZIBh89DbfrdFHUZmCWyPxL7KjuRM0KVqdbOT1ZWEwA6YtquGjqRCekZENawp82fWnEpYzq_ynFDo5vJg-3y6yRAgVBfdhqzGYWzkmGZMPAhuq4kbtd705_bqBhw9kyTzeXQ2qRDbomrn8DLv75_fJRO-VDw_u6lpUPBIo2Jdglq8NY4ltYxWFrL2hxW2cdWxptFn12882pLA5L-JWPBDroL0RvUvpe8iU5q8YdvqgQIfmPop9-n7f7jjIY7t_StglFIKpdn1v6Fcu2NjSf7u2WFdCkaHaEfM8mp5ziv4EL_T2tnCWJIsSA"; // <-- Replace this with your new token
+
+      if (!searchVal) {
+        alert("Please enter a postal code.");
+        return;
+      }
+
+      const url = `https://developers.onemap.sg/commonapi/search?searchVal=${searchVal}&returnGeom=Y&getAddrDetails=Y&token=${token}`;
+
+      fetch(url)
+        .then(res => {
+          if (!res.ok) throw new Error("Network response was not ok");
+          return res.json();
+        })
+        .then(data => {
+          if (data.results && data.results.length > 0) {
+            const result = data.results[0];
+            const lat = parseFloat(result.LATITUDE);
+            const lon = parseFloat(result.LONGITUDE);
+
+            document.getElementById("addressOutput").innerText = result.ADDRESS;
+
+            if (marker) map.removeLayer(marker);
+            marker = L.marker([lat, lon]).addTo(map).bindPopup(result.ADDRESS).openPopup();
+            map.setView([lat, lon], 17);
+          } else {
+            document.getElementById("addressOutput").innerText = "No results found.";
+          }
+        })
+        .catch(err => {
+          console.error("Fetch error:", err);
+          document.getElementById("addressOutput").innerText = "Error fetching data.";
+        });
+    }
+  </script>
+</body>
 </html>
