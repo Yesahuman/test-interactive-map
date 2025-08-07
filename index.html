@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Interactive Map</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+      html, body { height: 100%; margin: 0; }
+      #map { height: 100vh; width: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const val = params.get('postal') || '';
+      fetch(`https://www.onemap.gov.sg/api/common/elastic/search?searchVal=${val}&returnGeom=Y&getAddrDetails=Y&pageNum=1`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.found > 0) {
+            const res = data.results[0];
+            const lat = +res.LATITUDE, lng = +res.LONGITUDE;
+            const map = L.map('map').setView([lat, lng], 16);
+            L.tileLayer('https://maps-{s}.onemap.sg/v3/Default/{z}/{x}/{y}.png', {
+              maxZoom: 19,
+              attribution: '© OneMap Singapore'
+            }).addTo(map);
+            L.marker([lat, lng]).addTo(map).bindPopup(res.ADDRESS).openPopup();
+          } else {
+            document.getElementById('map').innerHTML = 'Address not found.';
+          }
+        });
+    </script>
+  </body>
+</html>
